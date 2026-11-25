@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PDF MCQ Quiz Master</title>
+<!-- PDF.js CDN for client-side PDF text extraction (graceful offline fallback included) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #2563eb;
+    --accent: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); padding-bottom: 40px;
+  }
+  .topbar {
+    background: var(--primary); color: #fff; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .topbar h1 { margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  }
+  .badge-admin { background: #fef3c7; color: #92400e; }
+  .badge-student { background: #dbeafe; color: #1e40af; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
+  .badge-danger { background: #fee2e2; color: #991b1b; }
+  .container { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: var(--card); border-radius: 14px; padding: 18px;
+    margin-bottom: 14px; box-shadow: 0 1px 4px rgba(15,23,42,0.08); border: 1px solid var(--border);
+  }
+  .card h2, .card h3 { margin: 0 0 12px 0; font-size: 16px; color: var(--primary); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+  .tab-btn {
+    flex: 1; min-width: 85px; padding: 10px 10px; border: 1px solid var(--border);
+    background: #fff; border-radius: 10px; font-weight: 600; font-size: 13px; color: var(--muted); cursor: pointer;
+  }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: #334155; }
+  input, select, textarea {
+    width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 14px; font-family: inherit; background: #fff; color: var(--text);
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-light); }
+  textarea { min-height: 120px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 16px; border: none; border-radius: 10px; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: 0.15s;
+  }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-success { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-sm { padding: 7px 11px; font-size: 12px; border-radius: 8px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); font-size: 12.5px; }
+  .alert {
+    padding: 10px 12px; border-radius: 10px; font-size: 13px; margin: 10px 0;
+  }
+  .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .quiz-item {
+    border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    background: #f8fafc;
+  }
+  .quiz-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .quiz-title { font-weight: 700; font-size: 15px; color: var(--text); }
+  .quiz-meta { font-size: 12px; color: var(--muted); margin: 6px 0 10px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .exam-bar {
+    background: #0f172a; color: #fff; padding: 10px 14px; border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    position: sticky; top: 56px; z-index: 40;
+  }
+  .timer { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; color: #34d399; }
+  .timer.low { color: #f87171; }
+  .option-card {
+    border: 1.5px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px;
+    cursor: pointer; display: flex; align-items: flex-start; gap: 10px; background: #fff;
+  }
+  .option-card.selected { border-color: var(--primary-light); background: #eff6ff; font-weight: 600; }
+  .opt-letter {
+    width: 26px; height: 26px; border-radius: 50%; background: #e2e8f0; color: #334155;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .option-card.selected .opt-letter { background: var(--primary-light); color: #fff; }
+  .palette { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pal-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border);
+    background: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .pal-btn.current { border: 2px solid var(--primary); }
+  .pal-btn.answered { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .pal-btn.review { background: var(--warning); color: #fff; border-color: var(--warning); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 700; background: #f8fafc; }
+  .table-wrap { overflow-x: auto; }
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-val { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .stat-lbl { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .review-q { border-left: 4px solid var(--border); padding: 10px 12px; margin-bottom: 10px; background: #f8fafc; border-radius: 0 10px 10px 0; }
+  .review-q.correct { border-left-color: var(--accent); background: #f0fdf4; }
+  .review-q.wrong { border-left-color: var(--danger); background: #fef2f2; }
+  .inline-ans { margin-top: 6px; font-size: 13px; font-weight: 700; color: #065f46; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📘 PDF Quiz Master</h1>
+  <div id="topbar-right"></div>
+</div>
+
+<div class="container">
+
+  <!-- ==================== LOGIN SCREEN ==================== -->
+  <div id="view-login" class="card">
+    <div class="tabs">
+      <button id="login-tab-student" class="tab-btn active" onclick="switchLoginTab('student')">🎓 Student Login</button>
+      <button id="login-tab-admin" class="tab-btn" onclick="switchLoginTab('admin')">🔐 Admin Login</button>
+    </div>
+
+    <div id="form-student-login">
+      <h2>Student Exam Portal</h2>
+      <p class="muted">Enter your details to access published CBT quizzes.</p>
+      <label>Full Name</label>
+      <input type="text" id="stu-name" placeholder="e.g., Rahul Sharma">
+      <label>Roll Number / Student ID</label>
+      <input type="text" id="stu-roll" placeholder="e.g., CSE-2026-014">
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="studentLogin()">Enter Exam Portal</button>
+    </div>
+
+    <div id="form-admin-login" class="hidden">
+      <h2>Admin Control Login</h2>
+      <div class="alert alert-info">
+        Default Admin Login: <strong>admin</strong> / <strong>admin123</strong><br>
+        (You can change the password inside Admin Settings.)
+      </div>
+      <label>Admin Username</label>
+      <input type="text" id="adm-user" value="admin" placeholder="admin">
+      <label>Admin Password</label>
+      <input type="password" id="adm-pass" placeholder="Enter password">
+      <div id="adm-err" class="alert alert-danger hidden">Invalid admin username or password.</div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="adminLogin()">Login as Admin</button>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN DASHBOARD ==================== -->
+  <div id="view-admin" class="hidden">
+    <div class="tabs">
+      <button class="tab-btn active" id="atab-upload" onclick="switchAdminTab('upload')">📄 Upload PDF</button>
+      <button class="tab-btn" id="atab-quizzes" onclick="switchAdminTab('quizzes')">📚 Quizzes</button>
+      <button class="tab-btn" id="atab-board" onclick="switchAdminTab('board')">🏆 Scoreboard</button>
+      <button class="tab-btn" id="atab-settings" onclick="switchAdminTab('settings')">⚙️ Settings</button>
+    </div>
+
+    <!-- ADMIN TAB 1: UPLOAD PDF & CREATE QUIZ -->
+    <div id="apane-upload" class="card">
+      <h2>Create Quiz from PDF or MCQ Text</h2>
+      <label>Quiz Title</label>
+      <input type="text" id="q-title" placeholder="e.g., Computer Networks Unit-5 CBT Test">
+
+      <div class="row-3">
+        <div>
+          <label>Duration (Min)</label>
+          <input type="number" id="q-duration" value="15" min="1">
+        </div>
+        <div>
+          <label>Right (+Marks)</label>
+          <input type="number" id="q-pos" value="1" step="0.5">
+        </div>
+        <div>
+          <label>Negative (-)</label>
+          <input type="number" id="q-neg" value="0.25" step="0.05" min="0">
+        </div>
+      </div>
+
+      <label>Max Screen-Switch Violations (Auto-Submit Limit)</label>
+      <input type="number" id="q-maxviol" value="3" min="1" max="20">
+
+      <label>Upload MCQ PDF / TXT File</label>
+      <input type="file" id="q-file" accept=".pdf,.txt" onchange="handleFileUpload(event)">
+      <div id="pdf-status" class="muted" style="margin-top:6px;">Supports standard MCQ PDFs & text files (English & Hindi Unicode).</div>
+
+      <label>Or Paste / Edit Extracted MCQ Text</label>
+      <textarea id="q-raw" placeholder="1. Which topology requires n(n-1)/2 links?
+A) Star
+B) Mesh
+C) Bus
+D) Ring
+Ans: B"></textarea>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn-outline" onclick="loadSampleMCQs()">✨ Load Sample MCQs</button>
+        <button class="btn btn-primary" onclick="parseAndPreview()">🔍 Parse Questions</button>
+      </div>
+
+      <div id="parsed-preview" class="hidden" style="margin-top:14px;">
+        <div class="alert alert-success" id="parse-summary"></div>
+        <div id="parsed-list" style="max-height:260px; overflow-y:auto;"></div>
+        <button class="btn btn-success btn-block" style="margin-top:10px;" onclick="publishQuiz()">🚀 Publish Quiz to Students</button>
+      </div>
+    </div>
+
+    <!-- ADMIN TAB 2: MANAGE QUIZZES -->
+    <div id="apane-quizzes" class="card hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 style="margin:0;">Published & Draft Quizzes</h2>
+        <button class="btn btn-outline btn-sm" onclick="syncFromCloud()">🔄 Sync</button>
+      </div>
+      <div id="admin-quiz-list"></div>
+    </div>
+
+    <!-- ADMIN TAB 3: REAL-TIME SCOREBOARD & SCREEN MONITORING -->
+    <div id="apane-board" class="card hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 style="margin:0;">Live Scoreboard & Screen Monitoring</h2>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="refreshScoreboard()">🔄 Refresh</button>
+          <button class="btn btn-success btn-sm" onclick="exportScoreboardCSV()">⬇️ CSV</button>
+        </div>
+      </div>
+      <p class="muted">Tracks student scores, device info, and real-time Android screen-switch / minimize alerts.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Quiz</th>
+              <th>Score</th>
+              <th>Screen Alerts</th>
+              <th>Device & Time</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboard-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADMIN TAB 4: SETTINGS & FIREBASE SYNC -->
+    <div id="apane-settings" class="card hidden">
+      <h2>Admin Security & Cloud Sync</h2>
+      <label>Change Admin Password</label>
+      <input type="password" id="new-adm-pass" placeholder="Enter new admin password">
+      <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="updateAdminPassword()">Update Password</button>
+
+      <hr style="border:none; border-top:1px solid var(--border); margin:18px 0;">
+
+      <h3>Optional: Live Multi-Device Firebase Sync</h3>
+      <p class="muted">Paste your Firebase Realtime Database URL (e.g., <code>https://your-app-default-rtdb.firebaseio.com</code>) to push quizzes & receive live student scores and screen-monitoring alerts across phones.</p>
+      <label>Firebase Realtime Database URL</label>
+      <input type="url" id="fb-url" placeholder="https://your-project-default-rtdb.firebaseio.com">
+      <button class="btn btn-success btn-sm" style="margin-top:8px;" onclick="saveFirebaseConfig()">Save Cloud Sync URL</button>
+
+      <hr style="border:none; border-top:1px solid var(--border); margin:18px 0;">
+      <button class="btn btn-danger btn-sm" onclick="clearAllScoreboard()">🗑️ Clear Local Scoreboard</button>
+    </div>
+  </div>
+
+  <!-- ==================== STUDENT DASHBOARD ==================== -->
+  <div id="view-student" class="hidden">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h2 style="margin:0;" id="stu-welcome">Welcome</h2>
+          <div class="muted" id="stu-meta"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="syncFromCloud()">🔄 Refresh Tests</button>
+      </div>
+    </div>
+    <div id="student-quiz-list"></div>
+  </div>
+
+  <!-- ==================== CBT EXAM SCREEN ==================== -->
+  <div id="view-exam" class="hidden">
+    <div class="exam-bar">
+      <div>
+        <div style="font-size:12px; opacity:0.8;" id="exam-q-counter">Q 1 / 10</div>
+        <div style="font-size:11px; color:#fbbf24;" id="exam-viol-counter">🔒 Screen Lock Active | Alerts: 0</div>
+      </div>
+      <div class="timer" id="exam-timer">15:00</div>
+      <button class="btn btn-danger btn-sm" onclick="confirmSubmitExam()">Submit</button>
+    </div>
+
+    <div id="exam-warning-banner" class="alert alert-danger hidden"></div>
+
+    <div class="card">
+      <div id="exam-question-text" style="font-size:15.5px; font-weight:600; line-height:1.5; margin-bottom:14px;"></div>
+      <div id="exam-options"></div>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn btn-outline" onclick="prevQuestion()">⬅️ Prev</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">Next ➡️</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn btn-warning btn-sm" onclick="toggleReview()">🚩 Mark Review</button>
+        <button class="btn btn-outline btn-sm" onclick="clearAnswer()">✖ Clear Option</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:6px;">Question Palette</h3>
+      <div class="palette" id="exam-palette"></div>
+    </div>
+  </div>
+
+  <!-- ==================== RESULT & INLINE ANSWER REVIEW ==================== -->
+  <div id="view-result" class="hidden">
+    <div class="card">
+      <h2>📊 Test Score Analytics</h2>
+      <div class="stat-grid" id="result-stats"></div>
+      <button class="btn btn-primary btn-block" onclick="backToStudentHome()">Back to Quizzes</button>
+    </div>
+    <div class="card">
+      <h2>📝 Question-by-Question Review (Answers Alongside)</h2>
+      <div id="result-review-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== STORAGE & DEFAULT DATA ====================
+const KEYS = {
+  ADMIN_PASS: 'qm_admin_pass_v1',
+  QUIZZES: 'qm_quizzes_v1',
+  SCORES: 'qm_scores_v1',
+  FB_URL: 'qm_fb_url_v1'
+};
+
+let currentUser = null; // { role: 'admin'|'student', name, roll }
+let parsedBuffer = [];
+let activeExam = null;
+
+function getAdminPass() { return localStorage.getItem(KEYS.ADMIN_PASS) || 'admin123'; }
+function getQuizzes() { return JSON.parse(localStorage.getItem(KEYS.QUIZZES) || '[]'); }
+function saveQuizzes(list) {
+  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(list));
+  pushToFirebase('quizzes', list);
+}
+function getScores() { return JSON.parse(localStorage.getItem(KEYS.SCORES) || '[]'); }
+function saveScores(list) {
+  localStorage.setItem(KEYS.SCORES, JSON.stringify(list));
+}
+function getFirebaseUrl() { return (localStorage.getItem(KEYS.FB_URL) || '').replace(/\/+$/, ''); }
+
+function notify(msg) {
+  if (window.AndroidBridge && window.AndroidBridge.showToast) {
+    window.AndroidBridge.showToast(msg);
+  } else {
+    alert(msg);
+  }
+}
+
+function getDeviceString() {
+  if (window.AndroidBridge && window.AndroidBridge.getDeviceInfo) {
+    return window.AndroidBridge.getDeviceInfo();
+  }
+  return 'Web Browser';
+}
+
+// Seed 1 default demo quiz if empty
+if (getQuizzes().length === 0) {
+  const demoQuiz = {
+    id: 'quiz_demo_1',
+    title: 'Computer Networks Demo CBT',
+    duration: 10,
+    posMarks: 1,
+    negMarks: 0.25,
+    maxViolations: 3,
+    active: true,
+    createdAt: new Date().toLocaleString(),
+    questions: [
+      {
+        q: 'In a full mesh topology with 10 devices, how many duplex links are required?',
+        options: ['10', '45', '90', '100'],
+        answer: 1
+      },
+      {
+        q: 'Which layer of the OSI model is responsible for logical addressing and routing?',
+        options: ['Data Link Layer', 'Transport Layer', 'Network Layer', 'Session Layer'],
+        answer: 2
+      },
+      {
+        q: 'What is the binary equivalent of decimal number 56?',
+        options: ['111000', '110100', '101100', '111010'],
+        answer: 0
+      },
+      {
+        q: 'In C programming, which keyword allocates shared memory space for all members?',
+        options: ['struct', 'union', 'enum', 'typedef'],
+        answer: 1
+      }
+    ]
+  };
+  localStorage.setItem(KEYS.QUIZZES, JSON.stringify([demoQuiz]));
+}
+
+// ==================== OPTIONAL FIREBASE REST SYNC ====================
+async function pushToFirebase(node, payload) {
+  const base = getFirebaseUrl();
+  if (!base) return;
+  try {
+    await fetch(`${base}/${node}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) { console.warn('Firebase sync failed', e); }
+}
+
+async function appendScoreToFirebase(record) {
+  const base = getFirebaseUrl();
+  if (!base) return;
+  try {
+    await fetch(`${base}/scores.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+  } catch (e) { console.warn('Score push failed', e); }
+}
+
+async function syncFromCloud() {
+  const base = getFirebaseUrl();
+  if (!base) {
+    renderAdminQuizzes();
+    renderStudentQuizzes();
+    return;
+  }
+  try {
+    const qRes = await fetch(`${base}/quizzes.json`);
+    const qData = await qRes.json();
+    if (Array.isArray(qData)) localStorage.setItem(KEYS.QUIZZES, JSON.stringify(qData));
+    const sRes = await fetch(`${base}/scores.json`);
+    const sData = await sRes.json();
+    if (sData && typeof sData === 'object') {
+      const merged = Object.values(sData);
+      localStorage.setItem(KEYS.SCORES, JSON.stringify(merged));
+    }
+    notify('Synced with Cloud!');
+  } catch (e) {
+    notify('Offline mode active');
+  }
+  renderAdminQuizzes();
+  renderStudentQuizzes();
+  renderScoreboard();
+}
+
+// ==================== AUTHENTICATION ====================
+function switchLoginTab(tab) {
+  document.getElementById('login-tab-student').classList.toggle('active', tab === 'student');
+  document.getElementById('login-tab-admin').classList.toggle('active', tab === 'admin');
+  document.getElementById('form-student-login').classList.toggle('hidden', tab !== 'student');
+  document.getElementById('form-admin-login').classList.toggle('hidden', tab !== 'admin');
+}
+
+function adminLogin() {
+  const u = document.getElementById('adm-user').value.trim();
+  const p = document.getElementById('adm-pass').value;
+  if (u === 'admin' && p === getAdminPass()) {
+    document.getElementById('adm-err').classList.add('hidden');
+    currentUser = { role: 'admin', name: 'Administrator' };
+    showView('view-admin');
+    updateTopbar();
+    document.getElementById('fb-url').value = getFirebaseUrl();
+    renderAdminQuizzes();
+    renderScoreboard();
+  } else {
+    document.getElementById('adm-err').classList.remove('hidden');
+  }
+}
+
+function studentLogin() {
+  const name = document.getElementById('stu-name').value.trim();
+  const roll = document.getElementById('stu-roll').value.trim();
+  if (!name || !roll) { notify('Please enter both Name and Roll Number'); return; }
+  currentUser = { role: 'student', name, roll };
+  document.getElementById('stu-welcome').textContent = `Hi, ${name}`;
+  document.getElementById('stu-meta').textContent = `Roll No: ${roll} • Device: ${getDeviceString()}`;
+  showView('view-student');
+  updateTopbar();
+  renderStudentQuizzes();
+}
+
+function logout() {
+  if (activeExam) { notify('Submit active exam first!'); return; }
+  currentUser = null;
+  showView('view-login');
+  updateTopbar();
+}
+
+function updateTopbar() {
+  const right = document.getElementById('topbar-right');
+  if (!currentUser) { right.innerHTML = ''; return; }
+  const badgeClass = currentUser.role === 'admin' ? 'badge-admin' : 'badge-student';
+  const label = currentUser.role === 'admin' ? 'ADMIN' : currentUser.roll;
+  right.innerHTML = `
+    <span class="badge ${badgeClass}">${label}</span>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;margin-left:6px;" onclick="logout()">Logout</button>
+  `;
+}
+
+function showView(id) {
+  ['view-login', 'view-admin', 'view-student', 'view-exam', 'view-result'].forEach(v => {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+}
+
+// ==================== ADMIN PANEL ====================
+function switchAdminTab(tab) {
+  ['upload', 'quizzes', 'board', 'settings'].forEach(t => {
+    document.getElementById('atab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('apane-' + t).classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'quizzes') renderAdminQuizzes();
+  if (tab === 'board') renderScoreboard();
+}
+
+async function handleFileUpload(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('pdf-status');
+
+  if (file.name.toLowerCase().endsWith('.txt')) {
+    const text = await file.text();
+    document.getElementById('q-raw').value = text;
+    status.textContent = `Loaded TXT file (${file.name}). Click "Parse Questions".`;
+    return;
+  }
+
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    if (typeof pdfjsLib === 'undefined') {
+      status.textContent = 'Offline PDF engine unavailable (connect internet for PDF.js or paste text directly).';
+      return;
+    }
+    try {
+      status.textContent = 'Extracting text from PDF...';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const arrayBuf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        fullText += content.items.map(it => it.str).join(' ') + '\n';
+      }
+      // Normalize inline numbering/options onto separate lines for cleaner parsing
+      fullText = fullText
+        .replace(/\s+(Q?\d+[\.\)])\s+/g, '\n$1 ')
+        .replace(/\s+([A-Da-d][\)\.])\s+/g, '\n$1 ')
+        .replace(/\s+(Ans(?:wer)?\s*[:\-])/gi, '\n$1');
+      document.getElementById('q-raw').value = fullText.trim();
+      status.textContent = `Extracted ${pdf.numPages} page(s) from ${file.name}. Click "Parse Questions".`;
+    } catch (err) {
+      status.textContent = 'PDF read error: ' + err.message;
+    }
+  }
+}
+
+function loadSampleMCQs() {
+  document.getElementById('q-title').value = 'Operating Systems Unit-4 Practice Test';
+  document.getElementById('q-raw').value =
+`1. Which scheduling algorithm may cause starvation of long processes?
+A) Round Robin
+B) First Come First Serve
+C) Shortest Job First
+D) Multilevel Queue
+Ans: C
+
+2. Thrashing occurs in an operating system when:
+A) CPU utilization is 100%
+B) Excessive paging activity happens
+C) Deadlock is resolved
+D) Cache hit ratio is high
+Ans: B
+
+3. Banker's algorithm is used for:
+A) Deadlock detection
+B) Deadlock avoidance
+C) Memory compaction
+D) Disk scheduling
+Ans: B`;
+  notify('Sample MCQs loaded!');
+}
+
+function parseAndPreview() {
+  const raw = document.getElementById('q-raw').value.trim();
+  if (!raw) { notify('Upload a PDF or paste MCQ text first'); return; }
+
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const questions = [];
+  let cur = null;
+
+  const qRegex = /^(?:Q\.?\s*)?\d+[\.\)\-]\s*(.+)$/i;
+  const optRegex = /^\(?([A-Da-d])[\)\.\-]\s*(.+)$/;
+  const ansRegex = /^(?:Ans(?:wer)?|Correct(?:\s*Answer)?|उत्तर)\s*[:\-\=]?\s*\(?([A-Da-d])\)?/i;
+
+  for (const line of lines) {
+    const ansMatch = line.match(ansRegex);
+    if (ansMatch && cur) {
+      cur.answer = ansMatch[1].toUpperCase().charCodeAt(0) - 65;
+      continue;
+    }
+    const optMatch = line.match(optRegex);
+    if (optMatch && cur) {
+      const idx = optMatch[1].toUpperCase().charCodeAt(0) - 65;
+      cur.options[idx] = optMatch[2].trim();
+      continue;
+    }
+    const qMatch = line.match(qRegex);
+    if (qMatch) {
+      if (cur && cur.options.filter(Boolean).length >= 2) questions.push(cur);
+      cur = { q: qMatch[1].trim(), options: ['', '', '', ''], answer: 0 };
+      continue;
+    }
+    if (cur && cur.options.every(o => !o)) {
+      cur.q += ' ' + line;
+    }
+  }
+  if (cur && cur.options.filter(Boolean).length >= 2) questions.push(cur);
+
+  if (questions.length === 0) {
+    notify('Could not detect MCQs. Use format: 1. Question / A) Opt1 / B) Opt2 / Ans: A');
+    return;
+  }
+
+  parsedBuffer = questions;
+  document.getElementById('parsed-preview').classList.remove('hidden');
+  document.getElementById('parse-summary').textContent = `✅ Successfully parsed ${questions.length} MCQ question(s).`;
+  document.getElementById('parsed-list').innerHTML = questions.map((item, idx) => `
+    <div class="quiz-item">
+      <strong>Q${idx + 1}. ${escapeHtml(item.q)}</strong>
+      <div class="muted" style="margin-top:4px;">
+        ${item.options.map((o, oi) => o ? `(${String.fromCharCode(65+oi)}) ${escapeHtml(o)}` : '').filter(Boolean).join(' &nbsp;|&nbsp; ')}
+      </div>
+      <div class="inline-ans">Answer: Option ${String.fromCharCode(65 + (item.answer || 0))}</div>
+    </div>
+  `).join('');
+}
+
+function publishQuiz() {
+  if (parsedBuffer.length === 0) { notify('Parse questions first!'); return; }
+  const title = document.getElementById('q-title').value.trim() || `Quiz ${new Date().toLocaleDateString()}`;
+  const quizzes = getQuizzes();
+  quizzes.unshift({
+    id: 'quiz_' + Date.now(),
+    title,
+    duration: parseInt(document.getElementById('q-duration').value) || 15,
+    posMarks: parseFloat(document.getElementById('q-pos').value) || 1,
+    negMarks: parseFloat(document.getElementById('q-neg').value) || 0,
+    maxViolations: parseInt(document.getElementById('q-maxviol').value) || 3,
+    active: true,
+    createdAt: new Date().toLocaleString(),
+    questions: parsedBuffer
+  });
+  saveQuizzes(quizzes);
+  parsedBuffer = [];
+  document.getElementById('parsed-preview').classList.add('hidden');
+  document.getElementById('q-raw').value = '';
+  document.getElementById('q-title').value = '';
+  notify('Quiz published successfully!');
+  switchAdminTab('quizzes');
+}
+
+function renderAdminQuizzes() {
+  const list = getQuizzes();
+  const el = document.getElementById('admin-quiz-list');
+  if (list.length === 0) {
+    el.innerHTML = '<p class="muted">No quizzes created yet.</p>';
+    return;
+  }
+  el.innerHTML = list.map(q => `
+    <div class="quiz-item">
+      <div class="quiz-header">
+        <div class="quiz-title">${escapeHtml(q.title)}</div>
+        <span class="badge ${q.active ? 'badge-ok' : 'badge-warn'}">${q.active ? 'Published' : 'Draft'}</span>
+      </div>
+      <div class="quiz-meta">
+        <span>📝 ${q.questions.length} Qs</span>
+        <span>⏱️ ${q.duration} min</span>
+        <span>➕ +${q.posMarks} / -${q.negMarks}</span>
+        <span>🔒 Max Alerts: ${q.maxViolations || 3}</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleQuizStatus('${q.id}')">${q.active ? 'Hide' : 'Publish'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQuiz('${q.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleQuizStatus(id) {
+  const list = getQuizzes().map(q => q.id === id ? { ...q, active: !q.active } : q);
+  saveQuizzes(list);
+  renderAdminQuizzes();
+}
+
+function deleteQuiz(id) {
+  if (!confirm('Delete this quiz?')) return;
+  saveQuizzes(getQuizzes().filter(q => q.id !== id));
+  renderAdminQuizzes();
+}
+
+function renderScoreboard() {
+  const scores = getScores().slice().reverse();
+  const tbody = document.getElementById('scoreboard-body');
+  if (scores.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">No student attempts recorded yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = scores.map(s => {
+    const vClass = s.violations === 0 ? 'badge-ok' : (s.violations < 3 ? 'badge-warn' : 'badge-danger');
+    return `
+      <tr>
+        <td><strong>${escapeHtml(s.studentName)}</strong><br><span class="muted">${escapeHtml(s.roll)}</span></td>
+        <td>${escapeHtml(s.quizTitle)}</td>
+        <td><strong>${s.score} / ${s.maxScore}</strong><br><span class="muted">${s.accuracy}% acc</span></td>
+        <td><span class="badge ${vClass}">${s.violations} switch(es)</span>${s.autoSubmitted ? '<br><span class="muted" style="color:#dc2626;">Auto-submitted</span>' : ''}</td>
+        <td><span class="muted">${escapeHtml(s.device || 'Device')}<br>${escapeHtml(s.submittedAt)}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function refreshScoreboard() { syncFromCloud(); }
+
+function exportScoreboardCSV() {
+  const scores = getScores();
+  if (scores.length === 0) { notify('No scoreboard data to export'); return; }
+  const headers = ['Name', 'Roll', 'Quiz', 'Score', 'MaxScore', 'Accuracy%', 'Violations', 'Device', 'SubmittedAt'];
+  const rows = scores.map(s => [
+    s.studentName, s.roll, s.quizTitle, s.score, s.maxScore, s.accuracy, s.violations, s.device, s.submittedAt
+  ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Quiz_Scoreboard.csv';
+  a.click();
+}
+
+function updateAdminPassword() {
+  const np = document.getElementById('new-adm-pass').value.trim();
+  if (np.length < 4) { notify('Password must be at least 4 characters'); return; }
+  localStorage.setItem(KEYS.ADMIN_PASS, np);
+  document.getElementById('new-adm-pass').value = '';
+  notify('Admin password updated!');
+}
+
+function saveFirebaseConfig() {
+  const url = document.getElementById('fb-url').value.trim();
+  localStorage.setItem(KEYS.FB_URL, url);
+  notify(url ? 'Firebase URL saved! Syncing...' : 'Cloud sync disabled (Local mode)');
+  if (url) syncFromCloud();
+}
+
+function clearAllScoreboard() {
+  if (!confirm('Clear all local scoreboard entries?')) return;
+  localStorage.setItem(KEYS.SCORES, '[]');
+  renderScoreboard();
+  notify('Scoreboard cleared');
+}
+
+// ==================== STUDENT PORTAL & CBT EXAM ====================
+function renderStudentQuizzes() {
+  const list = getQuizzes().filter(q => q.active);
+  const el = document.getElementById('student-quiz-list');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card"><p class="muted">No active quizzes published right now.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(q => `
+    <div class="card">
+      <div class="quiz-title">${escapeHtml(q.title)}</div>
+      <div class="quiz-meta">
+        <span>📝 ${q.questions.length} Questions</span>
+        <span>⏱️ ${q.duration} Mins</span>
+        <span>✅ +${q.posMarks} | ❌ -${q.negMarks}</span>
+        <span>🛡️ Screen Monitoring ON</span>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="startExam('${q.id}')">Start CBT Exam</button>
+    </div>
+  `).join('');
+}
+
+function startExam(quizId) {
+  const quiz = getQuizzes().find(q => q.id === quizId);
+  if (!quiz) return;
+  activeExam = {
+    quiz,
+    idx: 0,
+    answers: new Array(quiz.questions.length).fill(null),
+    review: new Array(quiz.questions.length).fill(false),
+    remainingSec: quiz.duration * 60,
+    violations: 0,
+    violationLogs: [],
+    timerId: null
+  };
+
+  if (window.AndroidBridge && window.AndroidBridge.setExamMode) {
+    window.AndroidBridge.setExamMode(true);
+  }
+
+  document.getElementById('exam-warning-banner').classList.add('hidden');
+  showView('view-exam');
+  renderExamQuestion();
+  updateViolationBadge();
+
+  activeExam.timerId = setInterval(() => {
+    activeExam.remainingSec--;
+    updateTimerDisplay();
+    if (activeExam.remainingSec <= 0) {
+      finishExam(false);
+    }
+  }, 1000);
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  if (!activeExam) return;
+  const m = Math.floor(activeExam.remainingSec / 60);
+  const s = activeExam.remainingSec % 60;
+  const el = document.getElementById('exam-timer');
+  el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  el.classList.toggle('low', activeExam.remainingSec <= 60);
+}
+
+function renderExamQuestion() {
+  const qObj = activeExam.quiz.questions[activeExam.idx];
+  const total = activeExam.quiz.questions.length;
+  document.getElementById('exam-q-counter').textContent = `Q ${activeExam.idx + 1} / ${total}`;
+  document.getElementById('exam-question-text').textContent = `${activeExam.idx + 1}. ${qObj.q}`;
+
+  const sel = activeExam.answers[activeExam.idx];
+  document.getElementById('exam-options').innerHTML = qObj.options.map((opt, oi) => {
+    if (!opt) return '';
+    return `
+      <div class="option-card ${sel === oi ? 'selected' : ''}" onclick="selectOption(${oi})">
+        <div class="opt-letter">${String.fromCharCode(65 + oi)}</div>
+        <div>${escapeHtml(opt)}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('exam-palette').innerHTML = activeExam.quiz.questions.map((_, i) => {
+    let cls = 'pal-btn';
+    if (i === activeExam.idx) cls += ' current';
+    if (activeExam.review[i]) cls += ' review';
+    else if (activeExam.answers[i] !== null) cls += ' answered';
+    return `<button class="${cls}" onclick="jumpToQuestion(${i})">${i + 1}</button>`;
+  }).join('');
+}
+
+function selectOption(oi) { activeExam.answers[activeExam.idx] = oi; renderExamQuestion(); }
+function clearAnswer() { activeExam.answers[activeExam.idx] = null; renderExamQuestion(); }
+function toggleReview() { activeExam.review[activeExam.idx] = !activeExam.review[activeExam.idx]; renderExamQuestion(); }
+function prevQuestion() { if (activeExam.idx > 0) { activeExam.idx--; renderExamQuestion(); } }
+function nextQuestion() { if (activeExam.idx < activeExam.quiz.questions.length - 1) { activeExam.idx++; renderExamQuestion(); } }
+function jumpToQuestion(i) { activeExam.idx = i; renderExamQuestion(); }
+
+function confirmSubmitExam() {
+  const unanswered = activeExam.answers.filter(a => a === null).length;
+  if (confirm(`Submit test now? (${unanswered} unanswered question(s))`)) {
+    finishExam(false);
+  }
+}
+
+// ==================== ANDROID & BROWSER SCREEN MONITORING ====================
+window.onAndroidFocusViolation = function(reason) {
+  registerViolation(reason);
+};
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && activeExam) {
+    registerViolation('Tab or app switched');
+  }
+});
+
+function registerViolation(reason) {
+  if (!activeExam) return;
+  activeExam.violations++;
+  const stamp = new Date().toLocaleTimeString();
+  activeExam.violationLogs.push(`${stamp}: ${reason}`);
+  updateViolationBadge();
+
+  const maxV = activeExam.quiz.maxViolations || 3;
+  const banner = document.getElementById('exam-warning-banner');
+  banner.classList.remove('hidden');
+  banner.textContent = `⚠️ Screen Monitoring Alert (${activeExam.violations}/${maxV}): ${reason}. Switching apps is prohibited!`;
+
+  if (activeExam.violations >= maxV) {
+    notify('Maximum screen-switch limit exceeded. Auto-submitting exam!');
+    finishExam(true);
+  }
+}
+
+function updateViolationBadge() {
+  if (!activeExam) return;
+  const maxV = activeExam.quiz.maxViolations || 3;
+  document.getElementById('exam-viol-counter').textContent =
+    `🔒 Screen Lock Active | Alerts: ${activeExam.violations}/${maxV}`;
+}
+
+function finishExam(autoSubmitted) {
+  if (!activeExam) return;
+  clearInterval(activeExam.timerId);
+  if (window.AndroidBridge && window.AndroidBridge.setExamMode) {
+    window.AndroidBridge.setExamMode(false);
+  }
+
+  const { quiz, answers, violations } = activeExam;
+  let correct = 0, wrong = 0, skipped = 0;
+  quiz.questions.forEach((q, i) => {
+    if (answers[i] === null) skipped++;
+    else if (answers[i] === q.answer) correct++;
+    else wrong++;
+  });
+
+  const rawScore = (correct * quiz.posMarks) - (wrong * quiz.negMarks);
+  const score = Math.round(rawScore * 100) / 100;
+  const maxScore = Math.round(quiz.questions.length * quiz.posMarks * 100) / 100;
+  const attempted = correct + wrong;
+  const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
+
+  const record = {
+    studentName: currentUser.name,
+    roll: currentUser.roll,
+    quizId: quiz.id,
+    quizTitle: quiz.title,
+    score,
+    maxScore,
+    correct,
+    wrong,
+    skipped,
+    accuracy,
+    violations,
+    autoSubmitted,
+    device: getDeviceString(),
+    submittedAt: new Date().toLocaleString()
+  };
+
+  const scores = getScores();
+  scores.push(record);
+  saveScores(scores);
+  appendScoreToFirebase(record);
+
+  // Render Result Screen with Answers Alongside Each Question
+  document.getElementById('result-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${score} / ${maxScore}</div><div class="stat-lbl">Final Score</div></div>
+    <div class="stat-box"><div class="stat-val">${accuracy}%</div><div class="stat-lbl">Accuracy</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#10b981;">${correct} ✅ / ${wrong} ❌</div><div class="stat-lbl">Right / Wrong (${skipped} Skipped)</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:${violations ? '#ef4444' : '#10b981'};">${violations}</div><div class="stat-lbl">Screen Switch Alerts</div></div>
+  `;
+
+  document.getElementById('result-review-list').innerHTML = quiz.questions.map((q, i) => {
+    const ua = answers[i];
+    const cls = ua === null ? '' : (ua === q.answer ? 'correct' : 'wrong');
+    const correctLetter = String.fromCharCode(65 + q.answer);
+    const userText = ua === null ? 'Not Attempted' : `${String.fromCharCode(65 + ua)}) ${escapeHtml(q.options[ua])}`;
+    return `
+      <div class="review-q ${cls}">
+        <div><strong>Q${i + 1}. ${escapeHtml(q.q)}</strong></div>
+        <div class="muted" style="margin-top:4px;">Your Answer: ${userText}</div>
+        <div class="inline-ans">Correct Answer: ${correctLetter}) ${escapeHtml(q.options[q.answer])}</div>
+      </div>
+    `;
+  }).join('');
+
+  activeExam = null;
+  showView('view-result');
+}
+
+function backToStudentHome() {
+  showView('view-student');
+  renderStudentQuizzes();
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>
